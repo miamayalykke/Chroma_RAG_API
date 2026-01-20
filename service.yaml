@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rag-app-service
+spec:
+  selector:
+    app: rag-api #Specifies which pod to route to. must match the deployment's pod labels
+  ports:
+  - port: 8000 #Specifies how to reach it. The port is the port you'll connect to from outside the cluster
+    targetPort: 8000 #Specifies where to send traffic. The targetPort routes incoming questios on your pod
+  type: NodePort #Specifies how to expose it. NodePort assignms a port on each node that routes to the Service
