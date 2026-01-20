@@ -2,7 +2,11 @@ import os
 import logging
 from fastapi import FastAPI
 import chromadb
-import ollama
+
+USE_MOCK_LLM = os.getenv("USE_MOCK_LLM", "0") == "1"
+
+if not USE_MOCK_LLM:
+    import ollama
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,13 +20,18 @@ app = FastAPI()
 chroma = chromadb.PersistentClient(path="./db")
 collection = chroma.get_or_create_collection("docs")
          #points to host computer from inside the container
-ollama_client = ollama.Client(host="http://host.docker.internal:11434")
+
 
 @app.post("/query")
 def query(q: str):
     results = collection.query(query_texts=[q], n_results=1)
     context = results["documents"][0][0] if results["documents"] else ""
 
+    if USE_MOCK_LLM:
+        return {"answer": context}
+
+    ollama_client = ollama.Client(host="http://host.docker.internal:11434")
+    #In production mode, use Ollama
     answer = ollama_client.generate(
         model=MODEL_NAME,
         prompt=f"Context:\n{context}\n\nQuestion: {q}\n\nAnswer clearly and concisely:"
